@@ -1,9 +1,9 @@
 // Phaser configuration
 const config = {
-  type: Phaser.AUTO, // Automatically chooses WebGL or Canvas rendering
+  type: Phaser.AUTO,
   width: 800,
   height: 600,
-  backgroundColor: "#87ceeb", // Sky blue background
+  backgroundColor: "#87ceeb",
   parent: "game-container",
   scene: {
     preload: preload,
@@ -16,9 +16,9 @@ const config = {
 const game = new Phaser.Game(config);
 
 let currentQuestion, correctAnswer, score = 0, answerBuffer = "";
+let gameStarted = false; // To prevent race actions before the countdown finishes
 
 function preload() {
-  // Load assets
   this.load.image("player", "assets/red_car.png"); // Player car
   this.load.image("opponent", "assets/blue_car.png"); // Opponent car
   this.load.image("track", "assets/road.png"); // Road background
@@ -55,30 +55,60 @@ function create() {
     fill: "#000"
   }).setOrigin(0.5);
 
-  // Generate the first question
-  generateQuestion.call(this);
-
-  // Set up keyboard input
-  this.input.keyboard.on("keydown", handleAnswer.bind(this));
+  // Add countdown text
+  this.countdownText = this.add.text(400, 300, "", {
+    font: "50px Arial",
+    fill: "#000"
+  }).setOrigin(0.5);
 
   // Opponent speed
   this.opponentSpeed = 0.5;
+
+  // Start the countdown
+  startCountdown.call(this);
 }
 
 function update() {
-  // Move the opponent car forward at a fixed speed
-  this.opponent.x += this.opponentSpeed;
+  if (gameStarted) {
+    // Move the opponent car forward at a fixed speed
+    this.opponent.x += this.opponentSpeed;
 
-  // Check if the player or the opponent wins
-  if (this.player.x >= 750) {
-    this.questionText.setText("You Win! Refresh to play again.");
-    this.input.keyboard.off("keydown");
-    this.opponentSpeed = 0; // Stop opponent
-  } else if (this.opponent.x >= 750) {
-    this.questionText.setText("Opponent Wins! Refresh to play again.");
-    this.input.keyboard.off("keydown");
-    this.opponentSpeed = 0; // Stop opponent
+    // Check if the player or the opponent wins
+    if (this.player.x >= 750) {
+      this.questionText.setText("You Win! Refresh to play again.");
+      this.input.keyboard.off("keydown");
+      this.opponentSpeed = 0; // Stop opponent
+    } else if (this.opponent.x >= 750) {
+      this.questionText.setText("Opponent Wins! Refresh to play again.");
+      this.input.keyboard.off("keydown");
+      this.opponentSpeed = 0; // Stop opponent
+    }
   }
+}
+
+// Countdown logic
+function startCountdown() {
+  let countdown = 3;
+
+  const timer = this.time.addEvent({
+    delay: 1000, // 1 second interval
+    callback: () => {
+      if (countdown > 0) {
+        this.countdownText.setText(countdown); // Display the countdown
+        countdown--;
+      } else if (countdown === 0) {
+        this.countdownText.setText("Go!"); // Show "Go!"
+        countdown--;
+      } else {
+        this.countdownText.setText(""); // Clear the countdown
+        timer.remove(); // Stop the timer
+        gameStarted = true; // Allow the race to start
+        generateQuestion.call(this); // Generate the first question
+        this.input.keyboard.on("keydown", handleAnswer.bind(this)); // Enable input
+      }
+    },
+    loop: true
+  });
 }
 
 // Generate a random math question
@@ -107,6 +137,8 @@ function generateQuestion() {
 
 // Handle player's input
 function handleAnswer(event) {
+  if (!gameStarted) return; // Ignore input before the countdown finishes
+
   const key = event.key;
 
   // Allow digits, minus sign (only as the first character), and backspace
