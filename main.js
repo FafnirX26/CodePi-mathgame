@@ -19,16 +19,23 @@ let currentQuestion, correctAnswer, score = 0, answerBuffer = "";
 
 function preload() {
   // Load assets
-  this.load.image("player", "assets/red_car.png"); // Placeholder for player sprite
-  this.load.image("track", "assets/road.png"); // Placeholder track
+  this.load.image("player", "assets/red_car.png"); // Player car
+  this.load.image("opponent", "assets/blue_car.png"); // Opponent car
+  this.load.image("track", "assets/road.png"); // Road background
 }
 
 function create() {
-  // Add a track background
-  this.add.image(400, 300, "track");
+  // Add the top track for the player
+  this.add.image(400, 200, "track");
 
-  // Add the player's sprite
-  this.player = this.add.sprite(50, 300, "player");
+  // Add the player's car
+  this.player = this.add.sprite(50, 200, "player");
+
+  // Add the bottom track for the opponent
+  this.add.image(400, 400, "track");
+
+  // Add the opponent's car
+  this.opponent = this.add.sprite(50, 400, "opponent");
 
   // Display a question
   this.questionText = this.add.text(400, 50, "", {
@@ -53,13 +60,24 @@ function create() {
 
   // Set up keyboard input
   this.input.keyboard.on("keydown", handleAnswer.bind(this));
+
+  // Opponent speed
+  this.opponentSpeed = 0.5;
 }
 
 function update() {
-  // Game logic
+  // Move the opponent car forward at a fixed speed
+  this.opponent.x += this.opponentSpeed;
+
+  // Check if the player or the opponent wins
   if (this.player.x >= 750) {
     this.questionText.setText("You Win! Refresh to play again.");
     this.input.keyboard.off("keydown");
+    this.opponentSpeed = 0; // Stop opponent
+  } else if (this.opponent.x >= 750) {
+    this.questionText.setText("Opponent Wins! Refresh to play again.");
+    this.input.keyboard.off("keydown");
+    this.opponentSpeed = 0; // Stop opponent
   }
 }
 
