@@ -62,7 +62,7 @@ function create() {
   }).setOrigin(0.5);
 
   // Opponent speed
-  this.opponentSpeed = 0.5;
+  this.opponentSpeed = 0.35;
 
   // Start the countdown
   startCountdown.call(this);
